@@ -1,0 +1,272 @@
+<!DOCTYPE>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=yes">
+    <link rel="stylesheet" type="text/css" href="css/cropper.min.css">
+    <link rel="stylesheet" type="text/css" href="css/mui.min.css">
+
+    <style>
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .image {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            width: 100%;
+            opacity: 0;
+            transition: .3s ease;
+            background-color: red;
+        }
+
+        .container:hover .overlay {
+            opacity: 1;
+        }
+
+        .icon {
+            color: white;
+            font-size: 100px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .fa-user:hover {
+            color: #eee;
+        }
+    </style>
+
+    <script type="text/javascript" src="js/jquery-1.11.1.min.js"></script>
+    <!-- <script type="text/javascript" src="js/lrz.mobile.min.js"></script> -->
+    <script type="text/javascript" src="dist/lrz.all.bundle.js"></script>
+    <script type="text/javascript" src="js/cropper.min.js"></script>
+    <script type="text/javascript">
+        $(function () {
+
+            function toFixed2(num) {
+                return parseFloat(+num.toFixed(2));
+            }
+
+            $('#ua').html('UA: ' + navigator.userAgent);
+
+
+            $('#cancleBtn').on('click', function () {
+                $("#showEdit").fadeOut();
+                $('#showResult').fadeIn();
+            });
+
+            $('#confirmBtn').on('click', function () {
+                $("#showEdit").fadeOut();
+
+                var $image = $('#report > img');
+                var dataURL = $image.cropper("getCroppedCanvas");
+                var imgurl = dataURL.toDataURL("image/jpeg", 0.5);
+                $("#changeAvatar > img").attr("src", imgurl);
+
+                $('#showResult').fadeIn();
+
+                //var data = $image.cropper("getData");
+                //console.log(data);
+                //console.log('imgurl' + imgurl);
+            });
+
+            function cutImg() {
+                $('#showResult').fadeOut();
+                $("#showEdit").fadeIn();
+                var $image = $('#report > img');
+                $image.cropper({
+                    aspectRatio: 1 / 1,
+                    autoCropArea: 0.7,
+                    strict: true,
+                    guides: false,
+                    center: true,
+                    highlight: false,
+                    dragCrop: false,
+                    cropBoxMovable: false,
+                    cropBoxResizable: false,
+                    zoom: -0.2,
+                    checkImageOrigin: true,
+                    background: false,
+                    minContainerHeight: 400,
+                    minContainerWidth: 300
+                });
+            }
+
+            function doFinish(startTimestamp, sSize, rst) {
+                var finishTimestamp = (new Date()).valueOf();
+                var elapsedTime = (finishTimestamp - startTimestamp);
+                $('#elapsedTime').text('Elapsed Time： ' + elapsedTime + 'ms');
+
+                var sourceSize = toFixed2(sSize / 1024),
+                    resultSize = toFixed2(rst.base64Len / 1024),
+                    scale = parseInt(100 - (resultSize / sourceSize * 100));
+
+                var p = document.getElementById('zipResult');
+                p.style.fontSize = 13 + 'px';
+                p.innerHTML = 'Original ：<span style="color: #ff4136;">' +
+                    sourceSize + 'KB' +
+                    '</span> <br />' +
+                    'croped size Base64 ：<span style="color: #28b62c;">' +
+                    resultSize + 'KB (.' + scale + '%)' +
+                    '</span> ';
+
+
+                $("#report").html('<img src="' + rst.base64 + '" style="width: 100%;height:100%">');
+                cutImg();
+            }
+
+            $('#image').on('change', function () {
+                var startTimestamp = (new Date()).valueOf();
+                var that = this;
+                lrz(this.files[0], {
+                    width: 800,
+                    height: 800,
+                    quality: 0.7
+                })
+                    .then(function (rst) {
+                        //console.log(rst);
+                        doFinish(startTimestamp, that.files[0].size, rst);
+                        return rst;
+                    })
+                    .then(function (rst) {
+
+                        return rst;
+                    })
+                    .then(function (rst) {
+                    })
+                    .catch(function (err) {
+
+                        alert(err);
+                    })
+                    .always(function () {
+                    });
+            });
+
+        });
+    </script>
+</head>
+
+<body>
+    <div id="showResult">
+        <div style="width: 50%;margin: 0 auto;margin-top: 10px;">
+            <input id="image" type="file" accept="image/*" capture="camera" />
+        </div>
+        <div style="width: 80%;margin: 0 auto;margin-top: 10px;">
+            <div id='elapsedTime' style="margin-bottom: 10px"></div>
+            <p id='zipResult'></p>
+        </div>
+        <div id="changeAvatar" style="margin-top: 35px;">
+            <img src="/image/default.jpg" style="width: 100px;margin-top: 10px;margin: 0 auto;display:block;">
+        </div>
+    </div>
+    <div id="showEdit" style="display: none;width:100%;height: 100%;position: absolute;top:0;left: 0;z-index: 9;">
+        <div style="width:100%;position: absolute;top:10px;left:0px;">
+            <button class="mui-btn" data-mui-style="fab" id='cancleBtn' style="margin-left: 10px;">Cancel</button>
+            <button class="mui-btn" data-mui-style="fab" data-mui-color="primary" id='confirmBtn'
+                style="float:right;margin-right: 10px;">CROP</button>
+        </div>
+        <div id="report">
+            <!-- <img src="mei.jpg" style="width: 300px;height:300px"> -->
+        </div>
+    </div>
+
+    <div class="container">
+        <img src="img/1.jpg" alt="Avatar" class="image">
+        <div class="overlay">
+            <a href="#" class="icon" title="User Profile">
+                <i class="fa fa-user"></i>
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <img src="img/2.jpg" alt="Avatar" class="image">
+        <div class="overlay">
+            <a href="#" class="icon" title="User Profile">
+                <i class="fa fa-user"></i>
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <img src="img/3.jpg" alt="Avatar" class="image">
+        <div class="overlay">
+            <a href="#" class="icon" title="User Profile">
+                <i class="fa fa-user"></i>
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <img src="img/4.jpg" alt="Avatar" class="image">
+        <div class="overlay">
+            <a href="#" class="icon" title="User Profile">
+                <i class="fa fa-user"></i>
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <img src="img/5.jpg" alt="Avatar" class="image">
+        <div class="overlay">
+            <a href="#" class="icon" title="User Profile">
+                <i class="fa fa-user"></i>
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <img src="img/6.jpg" alt="Avatar" class="image">
+        <div class="overlay">
+            <a href="#" class="icon" title="User Profile">
+                <i class="fa fa-user"></i>
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <img src="img/7.jpg" alt="Avatar" class="image">
+        <div class="overlay">
+            <a href="#" class="icon" title="User Profile">
+                <i class="fa fa-user"></i>
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <img src="img/8.jpg" alt="Avatar" class="image">
+        <div class="overlay">
+            <a href="#" class="icon" title="User Profile">
+                <i class="fa fa-user"></i>
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <img src="img/9.jpg" alt="Avatar" class="image">
+        <div class="overlay">
+            <a href="#" class="icon" title="User Profile">
+                <i class="fa fa-user"></i>
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <img src="img/10.jpg" alt="Avatar" class="image">
+        <div class="overlay">
+            <a href="#" class="icon" title="User Profile">
+                <i class="fa fa-user"></i>
+            </a>
+        </div>
+    </div>
+</body>
+
+</html>
